@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
 
   let winner: { id: string; name: string; class: string } | null = null
   let emailsSent = 0
+  const date = new Date().toLocaleDateString('he-IL')
 
   if (type === 'regular') {
     // Pool: everyone who completed at least one quiz
@@ -45,68 +46,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No eligible participants' }, { status: 400 })
     }
     winner = pool[Math.floor(Math.random() * pool.length)]
+
+    const { data: savedLottery, error: lErr } = await supabase
+      .from('lotteries')
+      .insert({
+        type,
+        winner_id: winner.id,
+        winner_name: winner.name,
+        winner_class: winner.class,
+        description: `הגרלת ביניים – ${date}`,
+      })
+      .select()
+      .single()
+
+    if (lErr) return NextResponse.json({ error: 'Failed to save lottery' }, { status: 500 })
+
+    if (sendEmails) {
+      const recipients = participants.filter(p => p.email).map(p => ({ email: p.email, name: p.name }))
+      try { emailsSent = await sendLotteryEmails(recipients, winner, date) }
+      catch (e) { console.error('Email sending failed:', e) }
+    }
+
+    return NextResponse.json({ success: true, lottery: savedLottery, winner: { name: winner.name, class: winner.class }, emailsSent })
+
   } else {
-    // Grand: weighted by points (every 10 pts = 1 ticket)
-    const pool: typeof participants = []
-    participants.filter(p => p.total_points > 0).forEach(p => {
-      const tickets = Math.max(1, Math.floor(p.total_points / 10))
-      for (let t = 0; t < tickets; t++) pool.push(p)
-    })
-    if (pool.length === 0) {
+    // Grand: top 3 by total points
+    const PRIZES = [
+      'מקום ראשון – אוהל ל-4 אנשים',
+      'מקום שני – פקל קפל מקצועי',
+      'מקום שלישי – שובר להמבורגר',
+    ]
+    const top3 = participants
+      .filter(p => p.total_points > 0)
+      .sort((a, b) => b.total_points - a.total_points)
+      .slice(0, 3)
+
+    if (top3.length === 0) {
       return NextResponse.json({ error: 'No eligible participants' }, { status: 400 })
     }
-    winner = pool[Math.floor(Math.random() * pool.length)]
-  }
 
-  const date = new Date().toLocaleDateString('he-IL')
-  const description = type === 'grand'
-    ? `הגרלה גדולה – סיום החידון – ${date}`
-    : `הגרלה כל 3 ימים – ${date}`
-
-  // Save lottery to DB
-  const { data: savedLottery, error: lErr } = await supabase
-    .from('lotteries')
-    .insert({
-      type,
-      winner_id: winner.id,
-      winner_name: winner.name,
-      winner_class: winner.class,
-      description,
-    })
-    .select()
-    .single()
-
-  if (lErr) {
-    return NextResponse.json({ error: 'Failed to save lottery' }, { status: 500 })
-  }
-
-  // Send emails
-  if (sendEmails) {
-    const recipients = participants.filter(p => p.email).map(p => ({ email: p.email, name: p.name }))
-    try {
-      if (type === 'regular') {
-        emailsSent = await sendLotteryEmails(recipients, winner, date)
-      } else {
-        // Grand lottery: get top 3 from leaderboard
-        const { data: top } = await supabase
-          .from('participants')
-          .select('name, class, total_points')
-          .order('total_points', { ascending: false })
-          .limit(3)
-
-        const topThree = (top || []).map((p, i) => ({ rank: i + 1, ...p }))
-        emailsSent = await sendGrandLotteryEmails(recipients, topThree)
-      }
-    } catch (emailErr) {
-      console.error('Email sending failed:', emailErr)
-      // Don't fail the whole request — lottery was saved
+    for (let i = 0; i < top3.length; i++) {
+      await supabase.from('lotteries').insert({
+        type: 'grand',
+        winner_id: top3[i].id,
+        winner_name: top3[i].name,
+        winner_class: top3[i].class,
+        description: `${PRIZES[i]} – ${date}`,
+      })
     }
-  }
 
-  return NextResponse.json({
-    success: true,
-    lottery: savedLottery,
-    winner: { name: winner.name, class: winner.class },
-    emailsSent,
-  })
+    winner = top3[0]
+
+    if (sendEmails) {
+      const recipients = participants.filter(p => p.email).map(p => ({ email: p.email, name: p.name }))
+      try {
+        const topThree = top3.map((p, i) => ({ rank: i + 1, name: p.name, class: p.class, total_points: p.total_points }))
+        emailsSent = await sendGrandLotteryEmails(recipients, topThree)
+      } catch (e) { console.error('Email sending failed:', e) }
+    }
+
+    return NextResponse.json({
+      success: true,
+      winners: top3.map((p, i) => ({ rank: i + 1, name: p.name, class: p.class, prize: PRIZES[i] })),
+      winner: { name: winner.name, class: winner.class },
+      emailsSent,
+    })
+  }
 }

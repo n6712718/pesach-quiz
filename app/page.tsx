@@ -181,22 +181,44 @@ export default function HomePage() {
 
         {/* Prizes */}
         <section className="mb-12">
-          <h2 className="text-2xl font-black text-ba-blue-800 mb-6 text-center">🎁 פרסים</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="card bg-gradient-to-br from-yellow-50 to-amber-50 border-ba-gold border-2 text-center">
-              <div className="text-5xl mb-3">🎲</div>
-              <h3 className="text-xl font-black text-yellow-900 mb-2">הגרלה כל 3 ימים</h3>
-              <p className="text-yellow-700">כל משתתף שענה על שאלות נכנס להגרלה!</p>
-              <div className="mt-3 badge-gold">הגרלה #1 בקרוב</div>
+          <h2 className="text-2xl font-black text-ba-blue-800 mb-2 text-center">🎁 פרסים</h2>
+          <p className="text-center text-gray-500 mb-8">שני סוגי פרסים – הגרלות ביניים + פרסי סיום לפי דירוג</p>
+
+          {/* Interim lottery */}
+          <div className="card bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-ba-gold mb-6 text-center">
+            <div className="text-5xl mb-3">🎲</div>
+            <h3 className="text-xl font-black text-yellow-900 mb-1">הגרלת ביניים – כל 3 ימים</h3>
+            <p className="text-yellow-700 text-sm">כל מי שענה על שאלון לפחות פעם אחת נכנס אוטומטית להגרלה!</p>
+            <div className="mt-3 inline-block bg-ba-gold text-yellow-900 px-4 py-1 rounded-full text-sm font-bold">הגרלה ב-20/3, 23/3, 26/3, 29/3, 1/4, 4/4</div>
+          </div>
+
+          {/* End prizes */}
+          <div className="mb-4 text-center">
+            <h3 className="text-xl font-black text-ba-blue-800 mb-1">🏆 פרסי סיום – לפי דירוג ניקוד</h3>
+            <p className="text-gray-500 text-sm mb-6">בסיום 20 הימים – הפרסים הולכים לשלושת המקומות הראשונים</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="card bg-gradient-to-br from-yellow-50 to-amber-100 border-2 border-yellow-400 text-center order-2 md:order-1">
+              <div className="text-5xl mb-2">🥈</div>
+              <div className="text-yellow-600 font-black text-lg mb-1">מקום שני</div>
+              <div className="text-2xl font-black text-yellow-800">פקל קפל</div>
+              <div className="text-yellow-700 text-sm mt-1">מקצועי</div>
             </div>
-            <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-ba-blue-300 border-2 text-center">
-              <div className="text-5xl mb-3">🥇</div>
-              <h3 className="text-xl font-black text-ba-blue-800 mb-2">הגרלה גדולה – יום האחרון</h3>
-              <p className="text-ba-blue-600">למי שצבר הכי הרבה נקודות – פרס מיוחד!</p>
-              <div className="mt-3 bg-ba-blue-100 text-ba-blue-700 px-3 py-1 rounded-full text-sm font-bold inline-block">
-                כל נקודה = כרטיס הגרלה
-              </div>
+            <div className="card bg-gradient-to-br from-yellow-100 to-yellow-200 border-2 border-yellow-500 text-center scale-105 shadow-xl order-1 md:order-2">
+              <div className="text-6xl mb-2">🥇</div>
+              <div className="text-yellow-700 font-black text-xl mb-1">מקום ראשון</div>
+              <div className="text-3xl font-black text-yellow-900">אוהל</div>
+              <div className="text-yellow-800 text-sm mt-1">ל-4 אנשים</div>
             </div>
+            <div className="card bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 text-center order-3">
+              <div className="text-5xl mb-2">🥉</div>
+              <div className="text-orange-600 font-black text-lg mb-1">מקום שלישי</div>
+              <div className="text-2xl font-black text-orange-800">שובר</div>
+              <div className="text-orange-700 text-sm mt-1">להמבורגר</div>
+            </div>
+          </div>
+          <div className="mt-4 card bg-ba-blue-50 text-center">
+            <p className="text-ba-blue-700 font-bold">⚡ ככל שתצבור יותר נקודות — כך תעלה בדירוג! שאלות האתגר מעניקות נקודות בונוס</p>
           </div>
         </section>
 

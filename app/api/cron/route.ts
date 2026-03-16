@@ -6,14 +6,17 @@ import { NextRequest, NextResponse } from 'next/server'
 const START_DATE = new Date(process.env.NEXT_PUBLIC_START_DATE || '2025-04-01')
 START_DATE.setHours(0, 0, 0, 0)
 
-// Grand lottery date: 31 March 2026
-const GRAND_DATE = new Date('2026-03-31')
-GRAND_DATE.setHours(0, 0, 0, 0)
+// Grand lottery = day 20 (start + 19 days)
+function getGrandDate(): Date {
+  const d = new Date(START_DATE)
+  d.setDate(d.getDate() + 19)
+  return d
+}
 
 function todayIsGrandLotteryDay(): boolean {
   const t = new Date()
   t.setHours(0, 0, 0, 0)
-  return t.getTime() === GRAND_DATE.getTime()
+  return t.getTime() === getGrandDate().getTime()
 }
 
 function todayIsRegularLotteryDay(): boolean {
