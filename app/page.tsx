@@ -56,8 +56,8 @@ export default function HomePage() {
             {[
               { icon: '📅', value: `${currentDay}/20`, label: 'יום נוכחי' },
               { icon: '⏰', value: `${daysLeft}`, label: 'ימים נותרים' },
-              { icon: '🏆', value: '3', label: 'הגרלות' },
-              { icon: '📖', value: '200', label: 'שאלות' },
+              { icon: '📝', value: '10', label: 'שאלות ליום' },
+              { icon: '⚡', value: '+6', label: 'אתגר ליום' },
             ].map(stat => (
               <div key={stat.label} className="bg-white/10 backdrop-blur rounded-2xl px-6 py-4 text-center min-w-[100px]">
                 <div className="text-2xl mb-1">{stat.icon}</div>
@@ -122,8 +122,8 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { step: '1', icon: '📝', title: 'נרשמים', desc: 'הרשמה עם שם, כיתה ואימייל – חינם ומהיר!' },
-              { step: '2', icon: '📖', title: 'לומדים ועונים', desc: 'כל יום נושא חדש מפניני הלכה + 10 שאלות' },
-              { step: '3', icon: '🏆', title: 'זוכים בפרסים', desc: 'הגרלה כל 3 ימים + הגרלה גדולה ביום האחרון' },
+              { step: '2', icon: '📖', title: 'לומדים ועונים', desc: 'כל יום נושא חדש מפניני הלכה + 10 שאלות יומיות' },
+              { step: '3', icon: '🏆', title: 'זוכים בפרסים', desc: 'הגרלה כל שבוע + הגרלה גדולה ביום האחרון' },
             ].map(item => (
               <div key={item.step} className="card text-center hover:shadow-xl transition-shadow">
                 <div className="w-14 h-14 bg-ba-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -134,6 +134,48 @@ export default function HomePage() {
                 <p className="text-gray-600">{item.desc}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Points & Challenge explanation */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-black text-ba-blue-800 mb-6 text-center">⚡ מערכת הנקודות והאתגר</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="card border-r-4 border-ba-blue-500">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-ba-blue-100 rounded-2xl flex items-center justify-center text-2xl">📝</div>
+                <div>
+                  <h3 className="text-xl font-black text-ba-blue-800">שאלון יומי</h3>
+                  <div className="text-ba-blue-500 text-sm">10 שאלות בכל יום</div>
+                </div>
+              </div>
+              <ul className="space-y-2 text-gray-700">
+                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> קוראים את נושא היום מפניני הלכה</li>
+                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> עונים על 10 שאלות רב-ברירה</li>
+                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> כל תשובה נכונה = 10 נקודות</li>
+                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> מקסימום 100 נקודות ליום</li>
+              </ul>
+            </div>
+            <div className="card border-r-4 border-ba-gold bg-yellow-50">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-yellow-200 rounded-2xl flex items-center justify-center text-2xl">⚡</div>
+                <div>
+                  <h3 className="text-xl font-black text-ba-blue-800">אתגר יומי</h3>
+                  <div className="text-yellow-700 text-sm">6 שאלות מעמיקות – רק לאחר השאלון!</div>
+                </div>
+              </div>
+              <ul className="space-y-2 text-gray-700">
+                <li className="flex items-start gap-2"><span className="text-ba-gold mt-0.5">★</span> נפתח אחרי השלמת השאלון היומי</li>
+                <li className="flex items-start gap-2"><span className="text-ba-gold mt-0.5">★</span> שאלות עיון מעמיקות יותר</li>
+                <li className="flex items-start gap-2"><span className="text-ba-gold mt-0.5">★</span> כל תשובה נכונה = 15–25 נקודות</li>
+                <li className="flex items-start gap-2"><span className="text-ba-gold mt-0.5">★</span> הנקודות נוספות לסך הכולל!</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-4 card bg-ba-blue-50 text-center">
+            <p className="text-ba-blue-700 font-bold text-lg">
+              💡 כל נקודה = כרטיס הגרלה נוסף! ככל שתצבור יותר — כך גדל הסיכוי שלך לזכות
+            </p>
           </div>
         </section>
 
