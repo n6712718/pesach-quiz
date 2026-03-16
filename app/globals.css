@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ba-blue: #1144b0;
+  --ba-blue-dark: #0d348a;
+  --ba-blue-light: #e8f0fe;
+  --ba-gold: #f5c842;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Heebo', Arial, sans-serif;
+  direction: rtl;
+  background: linear-gradient(135deg, #e8f0fe 0%, #f0f4ff 50%, #fff8e1 100%);
+  min-height: 100vh;
+  color: #1a1a2e;
+}
+
+/* RTL utilities */
+.rtl { direction: rtl; }
+.ltr { direction: ltr; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: var(--ba-blue); border-radius: 3px; }
+
+/* Shimmer animation for loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Confetti animation */
+@keyframes confettiFall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-ba-blue-700 text-white px-6 py-3 rounded-xl font-bold text-lg
+    hover:bg-ba-blue-800 active:scale-95 transition-all duration-200
+    shadow-lg hover:shadow-xl;
+}
+
+.btn-secondary {
+  @apply bg-white text-ba-blue-700 border-2 border-ba-blue-700 px-6 py-3 rounded-xl font-bold text-lg
+    hover:bg-ba-blue-50 active:scale-95 transition-all duration-200;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-2xl shadow-lg p-6 border border-blue-100;
+}
+
+/* Badge styles */
+.badge-gold {
+  @apply bg-ba-gold text-yellow-900 px-3 py-1 rounded-full text-sm font-bold;
+}
+
+/* Hebrew number in circle */
+.rank-circle {
+  @apply w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
