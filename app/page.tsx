@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import { getCurrentDay } from '@/lib/supabase'
 import { getTopicByDay } from '@/lib/data'
+import { challengeTopics } from '@/lib/data-challenge'
 import { getLotteries } from '@/lib/supabase'
 import type { Lottery, Participant } from '@/lib/types'
 
@@ -113,6 +114,20 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
+            {(() => {
+              const ct = challengeTopics.find(t => t.dayNumber === currentDay)
+              if (!ct) return null
+              return (
+                <div className="mt-3 card bg-yellow-50 border-2 border-ba-gold flex items-center gap-3 py-3 px-4">
+                  <span className="text-2xl">⚡</span>
+                  <div>
+                    <div className="text-yellow-700 text-xs font-bold mb-0.5">אתגר היום</div>
+                    <div className="font-bold text-ba-blue-800 text-sm">{ct.title}</div>
+                  </div>
+                  <div className="mr-auto text-yellow-600 text-xs font-medium">זמין אחרי השאלון</div>
+                </div>
+              )
+            })()}
           </section>
         )}
 
