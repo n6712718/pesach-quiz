@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import Header from '@/components/Header'
-import { supabase, getQuizConfig, saveQuizConfig } from '@/lib/supabase'
-import type { Participant, Lottery, QuizConfig } from '@/lib/types'
+import { supabase, getQuizConfig, saveQuizConfig, getQuestions, updateQuestion } from '@/lib/supabase'
+import type { Participant, Lottery, QuizConfig, QuestionDB } from '@/lib/types'
 
-type AdminTab = 'dashboard' | 'participants' | 'lotteries' | 'settings'
+type AdminTab = 'dashboard' | 'participants' | 'lotteries' | 'settings' | 'questions'
 
 const DEFAULT_CONFIG: QuizConfig = {
   quiz_name: 'חידון הלכות פסח',
@@ -38,6 +38,13 @@ export default function AdminPage() {
   const [settingsMsgType, setSettingsMsgType] = useState<'success' | 'error'>('success')
   const [newClass, setNewClass] = useState('')
   const [newLotteryDate, setNewLotteryDate] = useState('')
+  const [questions, setQuestions] = useState<QuestionDB[]>([])
+  const [editingQId, setEditingQId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<{ question: string; options: string[]; correct_index: number }>({
+    question: '', options: ['', '', '', ''], correct_index: 0,
+  })
+  const [qSaving, setQSaving] = useState(false)
+  const [qMsg, setQMsg] = useState('')
 
   const ADMIN_PASS = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'eli-admin-2025'
 
@@ -67,6 +74,7 @@ export default function AdminPage() {
     if (authed) {
       loadData()
       getQuizConfig().then(data => { if (data) setConfig({ ...DEFAULT_CONFIG, ...data }) })
+      getQuestions().then(setQuestions)
     }
   }, [authed, loadData])
 
@@ -149,6 +157,41 @@ export default function AdminPage() {
     loadData()
   }
 
+  function startEditQ(q: QuestionDB) {
+    setEditingQId(q.id)
+    setEditForm({ question: q.question, options: [...q.options], correct_index: q.correct_index })
+    setQMsg('')
+  }
+
+  async function saveEditQ() {
+    if (!editingQId) return
+    // Consecutive pattern check: warn if >3 questions in a row have same index 0 or 1
+    const qIdx = questions.findIndex(q => q.id === editingQId)
+    if (qIdx >= 3 && (editForm.correct_index === 0 || editForm.correct_index === 1)) {
+      const prev3 = questions.slice(qIdx - 3, qIdx)
+      if (prev3.every(q => q.correct_index === editForm.correct_index)) {
+        const letter = ['A', 'B', 'C', 'D'][editForm.correct_index]
+        setQMsg(`⚠️ 4 שאלות ברצף עם תשובה ${letter} — בדוק שזה אכן נכון לפני השמירה`)
+        return
+      }
+    }
+    setQSaving(true)
+    try {
+      await updateQuestion(editingQId, {
+        question: editForm.question,
+        options: editForm.options,
+        correct_index: editForm.correct_index,
+      })
+      setQuestions(prev => prev.map(q => q.id === editingQId ? { ...q, ...editForm } : q))
+      setEditingQId(null)
+      setQMsg('✅ השאלה נשמרה')
+      setTimeout(() => setQMsg(''), 3000)
+    } catch {
+      setQMsg('❌ שגיאה בשמירה')
+    }
+    setQSaving(false)
+  }
+
   if (!authed) return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="card max-w-sm w-full">
@@ -211,6 +254,7 @@ export default function AdminPage() {
             { id: 'participants', label: '👥 משתתפים' },
             { id: 'lotteries', label: '📋 היסטוריה' },
             { id: 'settings', label: '⚙️ הגדרות' },
+            { id: 'questions', label: `❓ שאלות${questions.filter(q => q.correct_index === 1).length > 0 ? ` ⚠️${questions.filter(q => q.correct_index === 1).length}` : ''}` },
           ] as { id: AdminTab; label: string }[]).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${tab === t.id ? 'bg-ba-blue-700 text-white' : 'bg-white text-ba-blue-600 border border-ba-blue-200 hover:bg-ba-blue-50'}`}>
@@ -492,6 +536,136 @@ export default function AdminPage() {
               className="w-full bg-ba-blue-700 text-white py-4 rounded-2xl font-black text-lg hover:bg-ba-blue-800 active:scale-95 transition-all shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">
               {settingsSaving ? '⏳ שומר...' : '💾 שמור הגדרות'}
             </button>
+          </div>
+        )}
+
+        {/* Questions tab */}
+        {tab === 'questions' && (
+          <div>
+            {/* Toast */}
+            {qMsg && (
+              <div className={`card text-center text-sm font-bold py-3 mb-4 ${
+                qMsg.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-300' :
+                qMsg.startsWith('⚠️') ? 'bg-yellow-50 text-yellow-700 border border-yellow-300' :
+                'bg-red-50 text-red-700 border border-red-300'
+              }`}>
+                {qMsg}
+                {qMsg.startsWith('⚠️') && (
+                  <button onClick={async () => { setQMsg(''); setQSaving(true); try { await updateQuestion(editingQId!, { question: editForm.question, options: editForm.options, correct_index: editForm.correct_index }); setQuestions(prev => prev.map(q => q.id === editingQId ? { ...q, ...editForm } : q)); setEditingQId(null); setQMsg('✅ השאלה נשמרה'); setTimeout(() => setQMsg(''), 3000) } catch { setQMsg('❌ שגיאה') } setQSaving(false) }}
+                    className="mr-4 underline font-bold">שמור בכל זאת</button>
+                )}
+              </div>
+            )}
+
+            {/* Inline edit form */}
+            {editingQId && (
+              <div className="card border-2 border-ba-blue-500 mb-4">
+                <h3 className="font-black text-ba-blue-800 mb-4">✏️ עריכת שאלה</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-bold text-ba-blue-700 mb-1">שאלה</label>
+                    <textarea value={editForm.question} rows={3}
+                      onChange={e => setEditForm(f => ({ ...f, question: e.target.value }))}
+                      className="w-full border-2 border-ba-blue-200 rounded-xl px-3 py-2 text-right focus:border-ba-blue-500 focus:outline-none text-sm resize-none" />
+                  </div>
+                  {(['א', 'ב', 'ג', 'ד'] as const).map((letter, i) => (
+                    <div key={i}>
+                      <label className="block text-sm font-bold text-ba-blue-700 mb-1">אפשרות {letter} ({['A','B','C','D'][i]})</label>
+                      <input type="text" value={editForm.options[i] ?? ''}
+                        onChange={e => setEditForm(f => {
+                          const opts = [...f.options]
+                          opts[i] = e.target.value
+                          return { ...f, options: opts }
+                        })}
+                        className="w-full border-2 border-ba-blue-200 rounded-xl px-3 py-2 text-right focus:border-ba-blue-500 focus:outline-none text-sm" />
+                    </div>
+                  ))}
+                  <div>
+                    <label className="block text-sm font-bold text-ba-blue-700 mb-1">✅ תשובה נכונה</label>
+                    <select
+                      value={editForm.correct_index}
+                      onChange={e => setEditForm(f => ({ ...f, correct_index: parseInt(e.target.value) }))}
+                      className="w-full border-2 border-ba-blue-500 rounded-xl px-3 py-2 focus:outline-none text-sm bg-white font-bold text-ba-blue-800"
+                    >
+                      {(['A', 'B', 'C', 'D'] as const).map((letter, i) => (
+                        <option key={i} value={i}>{letter} — {editForm.options[i] || '(ריק)'}</option>
+                      ))}
+                    </select>
+                    {(editForm.correct_index === 0 || editForm.correct_index === 1) && (
+                      <p className="text-yellow-600 text-xs mt-1 font-bold">
+                        ⚠️ תשובה {['A','B','C','D'][editForm.correct_index]} נפוצה כשגיאה — ודא שזה נכון
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={saveEditQ} disabled={qSaving}
+                    className="flex-1 bg-ba-blue-700 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-ba-blue-800 transition-all disabled:opacity-50">
+                    {qSaving ? '⏳ שומר...' : '💾 שמור'}
+                  </button>
+                  <button onClick={() => { setEditingQId(null); setQMsg('') }}
+                    className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all">
+                    ביטול
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="flex items-center gap-4 mb-4 flex-wrap">
+              <span className="text-sm text-gray-500">{questions.length} שאלות</span>
+              {questions.filter(q => q.correct_index === 1).length > 0 && (
+                <span className="text-sm font-bold text-red-600 bg-red-50 border border-red-200 px-3 py-1 rounded-full">
+                  ⚠️ {questions.filter(q => q.correct_index === 1).length} שאלות עם תשובה B — דורשות בדיקה
+                </span>
+              )}
+            </div>
+
+            {/* Question list */}
+            <div className="space-y-2">
+              {questions.map((q) => {
+                const isSuspect = q.correct_index === 1
+                const isEditing = editingQId === q.id
+                return (
+                  <div key={q.id}
+                    className={`card flex items-start gap-3 transition-all ${
+                      isEditing ? 'border-2 border-ba-blue-500 bg-ba-blue-50' :
+                      isSuspect ? 'border-2 border-red-300 bg-red-50' : ''
+                    }`}>
+                    <div className="flex-shrink-0 text-center pt-0.5">
+                      <div className="bg-ba-blue-100 text-ba-blue-700 font-bold text-xs px-2 py-1 rounded-lg whitespace-nowrap">
+                        יום {q.day_number}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-ba-blue-800 text-sm leading-snug line-clamp-2">{q.question}</div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          isSuspect ? 'bg-red-200 text-red-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                          תשובה: {['A', 'B', 'C', 'D'][q.correct_index]}
+                        </span>
+                        {isSuspect && (
+                          <span className="text-red-600 text-xs font-bold">
+                            ⚠️ יש לוודא שהתשובה הנכונה אכן היא B
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button onClick={() => startEditQ(q)}
+                      className="flex-shrink-0 text-ba-blue-600 hover:text-ba-blue-800 text-xs font-bold px-3 py-1.5 rounded-lg bg-ba-blue-50 hover:bg-ba-blue-100 border border-ba-blue-200 transition-all whitespace-nowrap">
+                      ערוך
+                    </button>
+                  </div>
+                )
+              })}
+              {questions.length === 0 && (
+                <div className="text-center py-12 text-gray-400">
+                  <div className="text-5xl mb-3">❓</div>
+                  <div>אין שאלות בטבלה</div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

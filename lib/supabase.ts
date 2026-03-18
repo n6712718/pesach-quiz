@@ -153,6 +153,22 @@ export async function getLotteries() {
   return data || []
 }
 
+export async function getQuestions() {
+  const { data } = await supabase
+    .from('questions')
+    .select('id, day_number, question, options, correct_index')
+    .order('day_number')
+  return data || []
+}
+
+export async function updateQuestion(
+  id: string,
+  updates: { question?: string; options?: string[]; correct_index?: number },
+) {
+  const { error } = await supabase.from('questions').update(updates).eq('id', id)
+  if (error) throw error
+}
+
 export async function getQuizConfig() {
   const { data } = await supabase
     .from('quiz_config')

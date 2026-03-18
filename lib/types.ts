@@ -75,6 +75,14 @@ export interface LeaderboardEntry {
   quizzes_completed: number
 }
 
+export interface QuestionDB {
+  id: string
+  day_number: number
+  question: string
+  options: string[]
+  correct_index: number
+}
+
 export interface QuizConfig {
   quiz_name: string
   school_name: string
