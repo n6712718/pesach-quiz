@@ -4,6 +4,7 @@ import Header from '@/components/Header'
 import { supabase } from '@/lib/supabase'
 import { getLotteries } from '@/lib/supabase'
 import type { Lottery } from '@/lib/types'
+import { AvatarSvg, getAvatarFromEmail } from '@/components/AvatarSvg'
 
 interface LeaderEntry {
   id: string
@@ -12,6 +13,8 @@ interface LeaderEntry {
   total_points: number
   streak: number
   last_quiz_day: number
+  avatar?: string
+  email?: string
 }
 
 export default function LeaderboardPage() {
@@ -24,7 +27,7 @@ export default function LeaderboardPage() {
   const fetchLeaders = useCallback(async () => {
     const { data } = await supabase
       .from('participants')
-      .select('id, name, class, total_points, streak, last_quiz_day')
+      .select('id, name, class, total_points, streak, last_quiz_day, avatar, email')
       .order('total_points', { ascending: false })
       .limit(100)
     setLeaders(data || [])
@@ -50,6 +53,11 @@ export default function LeaderboardPage() {
   }, [fetchLeaders])
 
   const myRank = leaders.findIndex(l => l.id === myId) + 1
+
+  /** Resolve avatar: use stored value or fall back to deterministic from email */
+  function resolveAvatar(entry: LeaderEntry): string {
+    return entry.avatar || (entry.email ? getAvatarFromEmail(entry.email) : 'דתי לאומי')
+  }
 
   return (
     <div className="min-h-screen">
@@ -86,8 +94,10 @@ export default function LeaderboardPage() {
               <div className="flex items-end justify-center gap-4 mb-8">
                 {/* 2nd */}
                 <div className="text-center flex-1">
-                  <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl font-black text-gray-500 border-4 border-gray-300">
-                    {leaders[1].name.charAt(0)}
+                  <div className="flex justify-center mb-2">
+                    <div className="rounded-full border-4 border-gray-300 overflow-hidden shadow">
+                      <AvatarSvg type={resolveAvatar(leaders[1])} size={56} />
+                    </div>
                   </div>
                   <div className="bg-gray-100 rounded-t-2xl px-3 py-4 h-24 flex flex-col justify-end items-center border-2 border-gray-200">
                     <div className="text-2xl mb-1">🥈</div>
@@ -97,8 +107,10 @@ export default function LeaderboardPage() {
                 </div>
                 {/* 1st */}
                 <div className="text-center flex-1">
-                  <div className="w-16 h-16 bg-ba-gold rounded-full flex items-center justify-center mx-auto mb-2 text-2xl font-black text-yellow-900 border-4 border-yellow-400 shadow-lg">
-                    {leaders[0].name.charAt(0)}
+                  <div className="flex justify-center mb-2">
+                    <div className="rounded-full border-4 border-yellow-400 overflow-hidden shadow-lg">
+                      <AvatarSvg type={resolveAvatar(leaders[0])} size={64} />
+                    </div>
                   </div>
                   <div className="bg-ba-gold/20 rounded-t-2xl px-3 py-4 h-32 flex flex-col justify-end items-center border-2 border-ba-gold">
                     <div className="text-3xl mb-1">🥇</div>
@@ -108,8 +120,10 @@ export default function LeaderboardPage() {
                 </div>
                 {/* 3rd */}
                 <div className="text-center flex-1">
-                  <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-black text-amber-700 border-4 border-amber-300">
-                    {leaders[2].name.charAt(0)}
+                  <div className="flex justify-center mb-2">
+                    <div className="rounded-full border-4 border-amber-300 overflow-hidden shadow">
+                      <AvatarSvg type={resolveAvatar(leaders[2])} size={48} />
+                    </div>
                   </div>
                   <div className="bg-amber-50 rounded-t-2xl px-3 py-4 h-20 flex flex-col justify-end items-center border-2 border-amber-200">
                     <div className="text-2xl mb-1">🥉</div>
@@ -144,8 +158,8 @@ export default function LeaderboardPage() {
                       </div>
 
                       {/* Avatar */}
-                      <div className="w-10 h-10 bg-ba-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-sm">{entry.name.charAt(0)}</span>
+                      <div className="rounded-full overflow-hidden flex-shrink-0 w-10 h-10">
+                        <AvatarSvg type={resolveAvatar(entry)} size={40} />
                       </div>
 
                       {/* Info */}

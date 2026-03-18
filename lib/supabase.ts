@@ -31,14 +31,22 @@ export async function getParticipantByEmail(email: string) {
   return data
 }
 
-export async function registerParticipant(name: string, className: string, email: string) {
+export async function registerParticipant(name: string, className: string, email: string, avatar?: string) {
   const { data, error } = await supabase
     .from('participants')
-    .insert({ name, class: className, email: email.toLowerCase(), total_points: 0, streak: 0, last_quiz_day: 0 })
+    .insert({ name, class: className, email: email.toLowerCase(), total_points: 0, streak: 0, last_quiz_day: 0, ...(avatar ? { avatar } : {}) })
     .select()
     .single()
   if (error) throw error
   return data
+}
+
+export async function updateParticipantAvatar(id: string, avatar: string) {
+  const { error } = await supabase
+    .from('participants')
+    .update({ avatar })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function getLeaderboard(limit = 50) {

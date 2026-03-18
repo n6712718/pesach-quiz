@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
-import { registerParticipant, getParticipantByEmail } from '@/lib/supabase'
+import { registerParticipant, getParticipantByEmail, updateParticipantAvatar } from '@/lib/supabase'
 import { CLASSES } from '@/lib/data'
+import { AvatarSvg, AVATAR_KEYS, getAvatarFromEmail } from '@/components/AvatarSvg'
+import type { AvatarKey } from '@/components/AvatarSvg'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -11,6 +13,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [className, setClassName] = useState('')
   const [email, setEmail] = useState('')
+  const [avatar, setAvatar] = useState<AvatarKey>('דתי לאומי')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -22,16 +25,27 @@ export default function RegisterPage() {
       if (mode === 'login') {
         const user = await getParticipantByEmail(email)
         if (!user) { setError('לא נמצא משתמש עם אימייל זה. הרשם תחילה.'); return }
+        // Assign deterministic avatar for existing users without one
+        if (!user.avatar) {
+          const assigned = getAvatarFromEmail(email.trim())
+          await updateParticipantAvatar(user.id, assigned)
+          user.avatar = assigned
+        }
         localStorage.setItem('pesach_user', JSON.stringify(user))
         router.push('/learn')
       } else {
         const existing = await getParticipantByEmail(email)
         if (existing) {
+          if (!existing.avatar) {
+            const assigned = getAvatarFromEmail(email.trim())
+            await updateParticipantAvatar(existing.id, assigned)
+            existing.avatar = assigned
+          }
           localStorage.setItem('pesach_user', JSON.stringify(existing))
           router.push('/learn')
           return
         }
-        const user = await registerParticipant(name.trim(), className, email.trim())
+        const user = await registerParticipant(name.trim(), className, email.trim(), avatar)
         localStorage.setItem('pesach_user', JSON.stringify(user))
         router.push('/learn')
       }
@@ -95,6 +109,28 @@ export default function RegisterPage() {
                   <option value="">בחר כיתה</option>
                   {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+
+              {/* Avatar picker */}
+              <div>
+                <label className="block text-sm font-bold text-ba-blue-800 mb-3">בחר אווטאר</label>
+                <div className="flex gap-2 flex-wrap justify-center">
+                  {AVATAR_KEYS.map(key => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setAvatar(key)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all border-2 ${
+                        avatar === key
+                          ? 'border-ba-blue-500 bg-ba-blue-50 scale-105 shadow-md'
+                          : 'border-transparent hover:border-ba-blue-200 hover:bg-ba-blue-50'
+                      }`}
+                    >
+                      <AvatarSvg type={key} size={60} />
+                      <span className="text-xs font-bold text-ba-blue-700">{key}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           )}

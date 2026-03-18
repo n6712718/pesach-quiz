@@ -7,6 +7,7 @@ export interface Participant {
   streak: number
   last_quiz_day: number
   created_at: string
+  avatar?: string
 }
 
 export interface Topic {
