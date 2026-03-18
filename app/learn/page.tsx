@@ -64,8 +64,26 @@ export default function LearnPage() {
     setSelected(null)
   }
 
+  function shuffleOptions(q: Question): Question {
+    const keys = ['a', 'b', 'c', 'd'] as const
+    const opts = keys.map(k => ({ k, text: q[`option${k.toUpperCase() as 'A'|'B'|'C'|'D'}`] }))
+    const correctText = q[`option${q.correctAnswer.toUpperCase() as 'A'|'B'|'C'|'D'}`]
+    for (let i = opts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [opts[i], opts[j]] = [opts[j], opts[i]]
+    }
+    return {
+      ...q,
+      optionA: opts[0].text,
+      optionB: opts[1].text,
+      optionC: opts[2].text,
+      optionD: opts[3].text,
+      correctAnswer: keys[opts.findIndex(o => o.text === correctText)],
+    }
+  }
+
   function startQuiz() {
-    const qs = getQuestionsByDay(selectedDay)
+    const qs = getQuestionsByDay(selectedDay).map(shuffleOptions)
     setQuestions(qs)
     setPhase('quiz')
     setCurrentQ(0)
@@ -123,7 +141,7 @@ export default function LearnPage() {
   }
 
   function startChallengeQuiz() {
-    const qs = getChallengeQuestionsByDay(selectedDay)
+    const qs = getChallengeQuestionsByDay(selectedDay).map(shuffleOptions)
     setQuestions(qs)
     setPhase('challenge-quiz')
     setCurrentQ(0)
