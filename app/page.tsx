@@ -215,21 +215,33 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="card bg-gradient-to-br from-yellow-50 to-amber-100 border-2 border-yellow-400 text-center order-2 md:order-1">
               <div className="text-5xl mb-2">🥈</div>
-              <div className="text-yellow-600 font-black text-lg mb-1">מקום שני</div>
-              <div className="text-2xl font-black text-yellow-800">פקל קפל</div>
-              <div className="text-yellow-700 text-sm mt-1">מקצועי</div>
+              <div className="text-yellow-600 font-black text-lg mb-3">מקום שני</div>
+              <img
+                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80"
+                alt="פקל קפה מקצועי"
+                className="w-full max-h-40 object-cover rounded-xl shadow mb-3"
+              />
+              <div className="text-2xl font-black text-yellow-800">פקל קפה מקצועי</div>
             </div>
             <div className="card bg-gradient-to-br from-yellow-100 to-yellow-200 border-2 border-yellow-500 text-center scale-105 shadow-xl order-1 md:order-2">
               <div className="text-6xl mb-2">🥇</div>
-              <div className="text-yellow-700 font-black text-xl mb-1">מקום ראשון</div>
-              <div className="text-3xl font-black text-yellow-900">אוהל</div>
-              <div className="text-yellow-800 text-sm mt-1">ל-4 אנשים</div>
+              <div className="text-yellow-700 font-black text-xl mb-3">מקום ראשון</div>
+              <img
+                src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&q=80"
+                alt="אוהל קמפינג ל-4 אנשים"
+                className="w-full max-h-40 object-cover rounded-xl shadow mb-3"
+              />
+              <div className="text-3xl font-black text-yellow-900">אוהל ל-4 אנשים</div>
             </div>
             <div className="card bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 text-center order-3">
               <div className="text-5xl mb-2">🥉</div>
-              <div className="text-orange-600 font-black text-lg mb-1">מקום שלישי</div>
-              <div className="text-2xl font-black text-orange-800">שובר</div>
-              <div className="text-orange-700 text-sm mt-1">להמבורגר</div>
+              <div className="text-orange-600 font-black text-lg mb-3">מקום שלישי</div>
+              <img
+                src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80"
+                alt="שובר להמבורגר"
+                className="w-full max-h-40 object-cover rounded-xl shadow mb-3"
+              />
+              <div className="text-2xl font-black text-orange-800">שובר להמבורגר</div>
             </div>
           </div>
           <div className="mt-4 card bg-ba-blue-50 text-center">
