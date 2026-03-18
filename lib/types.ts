@@ -74,3 +74,17 @@ export interface LeaderboardEntry {
   streak: number
   quizzes_completed: number
 }
+
+export interface QuizConfig {
+  quiz_name: string
+  school_name: string
+  year: string
+  start_date: string
+  end_date: string
+  total_days: number
+  classes: string[]
+  lottery_dates: string[]
+  prize_first: string
+  prize_second: string
+  prize_third: string
+}

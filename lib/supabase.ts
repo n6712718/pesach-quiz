@@ -151,3 +151,19 @@ export async function getLotteries() {
     .order('held_at', { ascending: false })
   return data || []
 }
+
+export async function getQuizConfig() {
+  const { data } = await supabase
+    .from('quiz_config')
+    .select('*')
+    .eq('id', 1)
+    .single()
+  return data || null
+}
+
+export async function saveQuizConfig(config: Record<string, unknown>) {
+  const { error } = await supabase
+    .from('quiz_config')
+    .upsert({ id: 1, ...config, updated_at: new Date().toISOString() })
+  if (error) throw error
+}

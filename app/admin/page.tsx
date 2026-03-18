@@ -1,10 +1,24 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import Header from '@/components/Header'
-import { supabase } from '@/lib/supabase'
-import type { Participant, Lottery } from '@/lib/types'
+import { supabase, getQuizConfig, saveQuizConfig } from '@/lib/supabase'
+import type { Participant, Lottery, QuizConfig } from '@/lib/types'
 
-type AdminTab = 'dashboard' | 'participants' | 'lotteries' | 'questions'
+type AdminTab = 'dashboard' | 'participants' | 'lotteries' | 'settings'
+
+const DEFAULT_CONFIG: QuizConfig = {
+  quiz_name: 'חידון הלכות פסח',
+  school_name: 'ישיבת בני עקיבא עלי',
+  year: 'תשפ״ו',
+  start_date: '2025-03-20',
+  end_date: '2025-04-08',
+  total_days: 20,
+  classes: ['ז1', 'ז2', 'ז3', 'ח1', 'ח2', 'ח3', 'ח4'],
+  lottery_dates: [],
+  prize_first: 'אוהל ל-4 אנשים',
+  prize_second: 'פקל קפה מקצועי',
+  prize_third: 'שובר להמבורגר',
+}
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
@@ -18,6 +32,12 @@ export default function AdminPage() {
   const [sendEmails, setSendEmails] = useState(true)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  const [config, setConfig] = useState<QuizConfig>(DEFAULT_CONFIG)
+  const [settingsSaving, setSettingsSaving] = useState(false)
+  const [settingsMsg, setSettingsMsg] = useState('')
+  const [settingsMsgType, setSettingsMsgType] = useState<'success' | 'error'>('success')
+  const [newClass, setNewClass] = useState('')
+  const [newLotteryDate, setNewLotteryDate] = useState('')
 
   const ADMIN_PASS = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'eli-admin-2025'
 
@@ -44,8 +64,56 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (authed) loadData()
+    if (authed) {
+      loadData()
+      getQuizConfig().then(data => { if (data) setConfig({ ...DEFAULT_CONFIG, ...data }) })
+    }
   }, [authed, loadData])
+
+  function calcTotalDays(start: string, end: string) {
+    if (!start || !end) return config.total_days
+    const diff = new Date(end).getTime() - new Date(start).getTime()
+    return Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)) + 1)
+  }
+
+  function setDate(field: 'start_date' | 'end_date', value: string) {
+    setConfig(c => {
+      const updated = { ...c, [field]: value }
+      updated.total_days = calcTotalDays(
+        field === 'start_date' ? value : c.start_date,
+        field === 'end_date' ? value : c.end_date,
+      )
+      return updated
+    })
+  }
+
+  async function saveSettings() {
+    setSettingsSaving(true)
+    setSettingsMsg('')
+    try {
+      await saveQuizConfig({
+        quiz_name: config.quiz_name,
+        school_name: config.school_name,
+        year: config.year,
+        start_date: config.start_date,
+        end_date: config.end_date,
+        total_days: config.total_days,
+        classes: config.classes,
+        lottery_dates: config.lottery_dates,
+        prize_first: config.prize_first,
+        prize_second: config.prize_second,
+        prize_third: config.prize_third,
+      })
+      setSettingsMsgType('success')
+      setSettingsMsg('✅ ההגדרות נשמרו בהצלחה!')
+    } catch {
+      setSettingsMsgType('error')
+      setSettingsMsg('❌ שגיאה בשמירה. נסה שוב.')
+    } finally {
+      setSettingsSaving(false)
+      setTimeout(() => setSettingsMsg(''), 4000)
+    }
+  }
 
   async function runLottery(type: 'regular' | 'grand') {
     if (!confirm(`להפעיל הגרלה ${type === 'grand' ? 'גדולה' : 'רגילה'}?${sendEmails ? '\nמיילים יישלחו לכל המשתתפים.' : ''}`)) return
@@ -142,6 +210,7 @@ export default function AdminPage() {
             { id: 'dashboard', label: '🎲 הגרלות' },
             { id: 'participants', label: '👥 משתתפים' },
             { id: 'lotteries', label: '📋 היסטוריה' },
+            { id: 'settings', label: '⚙️ הגדרות' },
           ] as { id: AdminTab; label: string }[]).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${tab === t.id ? 'bg-ba-blue-700 text-white' : 'bg-white text-ba-blue-600 border border-ba-blue-200 hover:bg-ba-blue-50'}`}>
@@ -282,6 +351,147 @@ export default function AdminPage() {
                 <div>אין הגרלות עדיין</div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Settings tab */}
+        {tab === 'settings' && (
+          <div className="space-y-6 max-w-2xl">
+
+            {/* Toast */}
+            {settingsMsg && (
+              <div className={`card text-center font-bold text-sm py-3 ${settingsMsgType === 'success' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-red-50 text-red-700 border border-red-300'}`}>
+                {settingsMsg}
+              </div>
+            )}
+
+            {/* תאריכים */}
+            <div className="card">
+              <h3 className="text-lg font-black text-ba-blue-800 mb-4">📅 תאריכים</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-ba-blue-700 mb-1">תאריך התחלה</label>
+                  <input type="date" value={config.start_date}
+                    onChange={e => setDate('start_date', e.target.value)}
+                    className="w-full border-2 border-ba-blue-200 rounded-xl px-3 py-2 focus:border-ba-blue-500 focus:outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-ba-blue-700 mb-1">תאריך סיום</label>
+                  <input type="date" value={config.end_date}
+                    onChange={e => setDate('end_date', e.target.value)}
+                    className="w-full border-2 border-ba-blue-200 rounded-xl px-3 py-2 focus:border-ba-blue-500 focus:outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-ba-blue-700 mb-1">מספר ימים כולל</label>
+                  <input type="number" min={1} value={config.total_days}
+                    onChange={e => setConfig(c => ({ ...c, total_days: parseInt(e.target.value) || 1 }))}
+                    className="w-full border-2 border-ba-blue-200 rounded-xl px-3 py-2 focus:border-ba-blue-500 focus:outline-none text-sm" />
+                </div>
+              </div>
+            </div>
+
+            {/* פרטי החידון */}
+            <div className="card">
+              <h3 className="text-lg font-black text-ba-blue-800 mb-4">🏫 פרטי החידון</h3>
+              <div className="space-y-3">
+                {([
+                  { key: 'quiz_name', label: 'שם החידון', placeholder: 'חידון הלכות פסח' },
+                  { key: 'school_name', label: 'שם המוסד', placeholder: 'ישיבת בני עקיבא עלי' },
+                  { key: 'year', label: 'שנה', placeholder: 'תשפ״ו' },
+                ] as { key: keyof QuizConfig; label: string; placeholder: string }[]).map(f => (
+                  <div key={f.key}>
+                    <label className="block text-sm font-bold text-ba-blue-700 mb-1">{f.label}</label>
+                    <input type="text" value={config[f.key] as string} placeholder={f.placeholder}
+                      onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
+                      className="w-full border-2 border-ba-blue-200 rounded-xl px-3 py-2 text-right focus:border-ba-blue-500 focus:outline-none text-sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* כיתות */}
+            <div className="card">
+              <h3 className="text-lg font-black text-ba-blue-800 mb-4">🎓 כיתות</h3>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {config.classes.map(cls => (
+                  <span key={cls} className="flex items-center gap-1 bg-ba-blue-50 border border-ba-blue-200 rounded-lg px-3 py-1 text-sm font-bold text-ba-blue-700">
+                    {cls}
+                    <button type="button"
+                      onClick={() => setConfig(c => ({ ...c, classes: c.classes.filter(x => x !== cls) }))}
+                      className="text-red-400 hover:text-red-600 font-black leading-none mr-1">×</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input type="text" value={newClass} placeholder="כיתה חדשה (למשל ט1)"
+                  onChange={e => setNewClass(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && newClass.trim()) {
+                      setConfig(c => ({ ...c, classes: [...c.classes, newClass.trim()] }))
+                      setNewClass('')
+                    }
+                  }}
+                  className="flex-1 border-2 border-ba-blue-200 rounded-xl px-3 py-2 text-right focus:border-ba-blue-500 focus:outline-none text-sm" />
+                <button type="button"
+                  onClick={() => { if (newClass.trim()) { setConfig(c => ({ ...c, classes: [...c.classes, newClass.trim()] })); setNewClass('') } }}
+                  className="bg-ba-blue-700 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-ba-blue-800 transition-all">
+                  + הוסף
+                </button>
+              </div>
+            </div>
+
+            {/* הגרלות */}
+            <div className="card">
+              <h3 className="text-lg font-black text-ba-blue-800 mb-4">🎲 תאריכי הגרלות</h3>
+              <div className="space-y-2 mb-3">
+                {config.lottery_dates.map(d => (
+                  <div key={d} className="flex items-center justify-between bg-ba-blue-50 border border-ba-blue-200 rounded-xl px-3 py-2">
+                    <span className="text-sm font-bold text-ba-blue-700">{new Date(d).toLocaleDateString('he-IL')}</span>
+                    <button type="button"
+                      onClick={() => setConfig(c => ({ ...c, lottery_dates: c.lottery_dates.filter(x => x !== d) }))}
+                      className="text-red-400 hover:text-red-600 font-black text-lg leading-none">×</button>
+                  </div>
+                ))}
+                {config.lottery_dates.length === 0 && (
+                  <div className="text-gray-400 text-sm text-center py-2">אין תאריכים מוגדרים</div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input type="date" value={newLotteryDate}
+                  onChange={e => setNewLotteryDate(e.target.value)}
+                  className="flex-1 border-2 border-ba-blue-200 rounded-xl px-3 py-2 focus:border-ba-blue-500 focus:outline-none text-sm" />
+                <button type="button"
+                  onClick={() => { if (newLotteryDate && !config.lottery_dates.includes(newLotteryDate)) { setConfig(c => ({ ...c, lottery_dates: [...c.lottery_dates, newLotteryDate].sort() })); setNewLotteryDate('') } }}
+                  className="bg-ba-blue-700 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-ba-blue-800 transition-all">
+                  + הוסף
+                </button>
+              </div>
+            </div>
+
+            {/* פרסים */}
+            <div className="card">
+              <h3 className="text-lg font-black text-ba-blue-800 mb-4">🏆 פרסים</h3>
+              <div className="space-y-3">
+                {([
+                  { key: 'prize_first', label: '🥇 מקום ראשון' },
+                  { key: 'prize_second', label: '🥈 מקום שני' },
+                  { key: 'prize_third', label: '🥉 מקום שלישי' },
+                ] as { key: keyof QuizConfig; label: string }[]).map(f => (
+                  <div key={f.key}>
+                    <label className="block text-sm font-bold text-ba-blue-700 mb-1">{f.label}</label>
+                    <input type="text" value={config[f.key] as string}
+                      onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
+                      className="w-full border-2 border-ba-blue-200 rounded-xl px-3 py-2 text-right focus:border-ba-blue-500 focus:outline-none text-sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Save */}
+            <button onClick={saveSettings} disabled={settingsSaving}
+              className="w-full bg-ba-blue-700 text-white py-4 rounded-2xl font-black text-lg hover:bg-ba-blue-800 active:scale-95 transition-all shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">
+              {settingsSaving ? '⏳ שומר...' : '💾 שמור הגדרות'}
+            </button>
           </div>
         )}
       </div>
