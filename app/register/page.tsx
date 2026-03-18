@@ -127,7 +127,6 @@ export default function RegisterPage() {
                       }`}
                     >
                       <AvatarSvg type={key} size={60} />
-                      <span className="text-xs font-bold text-ba-blue-700">{key}</span>
                     </button>
                   ))}
                 </div>
