@@ -80,12 +80,13 @@ export async function submitQuizCompletion(
   participantId: string,
   dayNumber: number,
   score: number,
-  answers: unknown[]
+  answers: unknown[],
+  isCatchup = false,
 ) {
   // Save completion
   const { error: completionError } = await supabase
     .from('quiz_completions')
-    .insert({ participant_id: participantId, day_number: dayNumber, score, answers })
+    .insert({ participant_id: participantId, day_number: dayNumber, score, answers, is_catchup: isCatchup })
   if (completionError) throw completionError
 
   // Update total points and streak

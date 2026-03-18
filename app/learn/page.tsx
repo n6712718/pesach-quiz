@@ -105,7 +105,7 @@ export default function LearnPage() {
     if (!user || submitting) return
     setSubmitting(true)
     try {
-      await submitQuizCompletion(user.id, selectedDay, score, finalAnswers)
+      await submitQuizCompletion(user.id, selectedDay, score, finalAnswers, selectedDay < currentDay)
       // Update local user
       const updated = { ...user, total_points: user.total_points + score }
       setUser(updated)
@@ -149,6 +149,9 @@ export default function LearnPage() {
   const topic = getTopicByDay(selectedDay)
   const totalScore = answers.reduce((s, a) => s + a.points, 0)
   const correctCount = answers.filter(a => a.isCorrect).length
+  const todayCompleted = completedDays.has(currentDay)
+  const missedDays = Array.from({ length: currentDay - 1 }, (_, i) => i + 1)
+    .filter(d => !completedDays.has(d))
 
   if (!user) return null
 
@@ -199,6 +202,37 @@ export default function LearnPage() {
                 )
               })}
             </div>
+
+            {/* Catch-up section */}
+            {missedDays.length > 0 && (
+              <div className="mt-10">
+                <h2 className="text-xl font-black text-ba-blue-800 mb-2">📚 השלמת ימים קודמים</h2>
+                {!todayCompleted ? (
+                  <div className="card bg-gray-50 border-2 border-gray-200 text-center py-6">
+                    <div className="text-3xl mb-2">🔒</div>
+                    <div className="font-bold text-gray-600">השלם את הלימוד של היום כדי לפתוח ימים קודמים</div>
+                    <div className="text-gray-400 text-sm mt-1">{missedDays.length} ימים ממתינים להשלמה</div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {missedDays.map(d => {
+                      const t = getTopicByDay(d)
+                      return (
+                        <button key={d} onClick={() => startDay(d)}
+                          className="w-full card border-2 border-orange-200 bg-orange-50 hover:border-orange-400 hover:shadow-md transition-all text-right flex items-center gap-3 p-4">
+                          <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center font-black text-orange-700 flex-shrink-0 text-sm">{d}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-orange-500 text-xs mb-0.5">יום {d}</div>
+                            <div className="font-bold text-ba-blue-800 text-sm leading-tight">{t?.title}</div>
+                          </div>
+                          <span className="bg-orange-200 text-orange-700 text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap">לא הושלם</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -574,6 +608,30 @@ export default function LearnPage() {
                 </div>
               ))}
             </div>
+
+            {/* Catch-up section — shown after today's quiz or after a catch-up day */}
+            {(selectedDay === currentDay || todayCompleted) && missedDays.length > 0 && (
+              <div className="card mt-6 text-right border-2 border-orange-200 bg-orange-50">
+                <h3 className="text-xl font-black text-ba-blue-800 mb-1">📚 השלמת ימים קודמים</h3>
+                <p className="text-orange-600 text-sm mb-4">{missedDays.length} ימים שלא הושלמו — צבור נקודות מלאות על כל יום</p>
+                <div className="space-y-3">
+                  {missedDays.map(d => {
+                    const t = getTopicByDay(d)
+                    return (
+                      <button key={d} onClick={() => startDay(d)}
+                        className="w-full bg-white border-2 border-orange-200 hover:border-orange-400 hover:shadow-md transition-all rounded-2xl text-right flex items-center gap-3 p-4">
+                        <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center font-black text-orange-700 flex-shrink-0 text-sm">{d}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-orange-500 text-xs mb-0.5">יום {d}</div>
+                          <div className="font-bold text-ba-blue-800 text-sm leading-tight">{t?.title}</div>
+                        </div>
+                        <span className="bg-orange-200 text-orange-700 text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap">לא הושלם</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
